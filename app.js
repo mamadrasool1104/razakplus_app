@@ -725,9 +725,47 @@ function renderHome() {
         catContainer.appendChild(div);
     });
 
+    // کارت «ایده‌های شما»: برخلاف کارت‌های بالا وارد بازی نمی‌شود، بلکه
+    // ایده‌هایی که کاربران دیگر فرستاده‌اند (و خودت دستی در data.json،
+    // بخش suggestions.submittedIdeas، تأیید/اضافه کرده‌ای) را نشان می‌دهد.
+    const ideasDiv = document.createElement('div');
+    ideasDiv.className = 'category-card ideas-card';
+    ideasDiv.innerHTML = `
+        <div class="cat-icon">👥</div>
+        <div class="cat-info">
+            <h3 class="cat-title">ایده‌های شما</h3>
+            <div class="cat-stats">ایده‌هایی که بازیکن‌های دیگه فرستادن</div>
+        </div>`;
+    ideasDiv.addEventListener('click', () => { AudioEngine.tap(); openCommunityIdeasModal(); });
+    catContainer.appendChild(ideasDiv);
+
     renderDailyChallengeCard();
     renderChannelPromos();
     renderSuggestionsSection();
+}
+
+// لیست ایده‌هایی که خودت دستی در data.json (بخش suggestions.submittedIdeas)
+// تأیید و اضافه کرده‌ای را نشان می‌دهد. اگر آرایه خالی بود، یک پیام دوستانه
+// نشان داده می‌شود به‌جای یک پنجره خالی.
+function openCommunityIdeasModal() {
+    const list = (DB.suggestions && Array.isArray(DB.suggestions.submittedIdeas)) ? DB.suggestions.submittedIdeas : [];
+    const body = document.getElementById('community-ideas-body');
+    if (!body) return;
+
+    if (list.length === 0) {
+        body.innerHTML = `<p class="community-ideas-empty">هنوز ایده‌ای ثبت نشده — اولین نفری باش که پیشنهاد می‌ده! 🫶</p>`;
+    } else {
+        body.innerHTML = list.map(item => `
+            <div class="community-idea-item">
+                <div class="community-idea-head">
+                    <span class="community-idea-name">${item.name || 'ناشناس'}</span>
+                    ${item.emojis ? `<span class="community-idea-emojis">${item.emojis}</span>` : ''}
+                </div>
+                <p class="community-idea-text">${item.idea || ''}</p>
+            </div>`).join('');
+    }
+
+    document.getElementById('modal-community-ideas').classList.remove('hidden');
 }
 
 // بخش «پیشنهادات شما 🫂» — جایگزین کارت قبلی «به‌زودی...» است. تمام متن‌ها
@@ -1008,21 +1046,24 @@ function requireChannelJoin(action) {
     document.getElementById('modal-join-gate').classList.remove('hidden');
 }
 
-// محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. اگر کانال از نوع
-// «همکار/تبلیغاتی» باشد، همین صراحتاً به کاربر گفته می‌شود (نه اینکه چیز
-// دیگری وانمود شود).
+// محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. متن بالای پنجره
+// و ردیف کانال هر دو از info.channel (که از فایل خودِ آن کانال می‌آید،
+// مثل avaye-khiyal.js) خوانده می‌شوند — هیچ‌جا نوع 'partner' به کاربر
+// نشان داده نمی‌شود.
 function renderJoinGateModal(info) {
+    const messageEl = document.getElementById('join-gate-message');
+    if (messageEl) {
+        messageEl.textContent = info.channel.joinMessage || 'برای استفاده از رازک، عضویت در کانال زیر لازمه 👇';
+    }
+
     const container = document.getElementById('join-gate-channels');
     if (!container) return;
     container.innerHTML = '';
 
     const row = document.createElement('div');
     row.className = 'join-gate-channel-row';
-    const partnerNote = info.channel.type === 'partner'
-        ? '<span class="jg-partner-tag">کانال همکار</span>'
-        : '';
     row.innerHTML = `
-        <span class="jg-channel-name">${info.channel.icon} ${info.channel.name} ${partnerNote}</span>
+        <span class="jg-channel-name">${info.channel.icon} ${info.channel.name}</span>
         <button type="button" class="ios-btn primary-btn jg-join-btn">عضویت</button>`;
     row.querySelector('.jg-join-btn').addEventListener('click', () => {
         AudioEngine.tap();
