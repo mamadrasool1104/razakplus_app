@@ -214,7 +214,17 @@
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="white" stroke="none"/></svg>
             </div>
             <h2>قبل از شروع...</h2>
-            <p id="join-gate-message">عضویت در کانال زیر برای استفاده از رازک لازمه 👇</p>
+            <!-- توضیح هر کانال مستقیماً همینجا نوشته شده تا بدون باز کردن هیچ
+                 فایل JS دیگری، فقط با ویرایش همین index.html قابل تغییر باشد.
+                 هر بار فقط یکی از این چهار پاراگراف (همانی که «کانال فعالِ
+                 همین هفته» است) نمایش داده می‌شود؛ app.js با توجه به
+                 data-channel-id تشخیص می‌دهد کدام‌یک را نشان دهد — فقط کافیست
+                 متن داخل تگ‌های p زیر را عوض کنی، هیچ‌جای دیگری از کد نیازی
+                 به تغییر ندارد. -->
+            <p class="join-gate-msg hidden" data-channel-id="avay_khiyal">کانال شعر؛ اگه دلت یه گوشه‌ی آروم برای خوندن شعر و ادب می‌خواد، این هفته باید عضوش باشی 👇</p>
+            <p class="join-gate-msg hidden" data-channel-id="tech_nour">اخبار هوش مصنوعی و تکنولوژی رو می‌خوای دست اول بگیری؟ این هفته عضویت توی تک‌نور لازمه 👇</p>
+            <p class="join-gate-msg hidden" data-channel-id="rasa_meme">دلت یه خنده‌ی حسابی می‌خواد؟ این هفته نوبت رسامیمه، عضو شو و حال کن 👇</p>
+            <p class="join-gate-msg hidden" data-channel-id="partner">برای ادامه‌ی بازی، عضویت توی کانال زیر لازمه؛ عضو شو و از رازک لذت ببر 👇</p>
             <ul class="join-gate-benefits">
                 <li><span class="jg-icon">🆕</span> اطلاع از نسخه‌ها و قابلیت‌های جدید رازک</li>
                 <li><span class="jg-icon">🧩</span> دسترسی به مراحل و چالش‌های جدید</li>
@@ -306,16 +316,6 @@
         </div>
     </div>
 
-    <div id="modal-community-ideas" class="modal-overlay hidden">
-        <div class="ios-modal slide-up changelog-modal">
-            <div class="modal-header">
-                <h2>👥 ایده‌های شما</h2>
-                <button class="close-btn" data-close="modal-community-ideas">×</button>
-            </div>
-            <div class="changelog-body" id="community-ideas-body"></div>
-        </div>
-    </div>
-
     <div id="toast-container" class="toast-container"></div>
 
     <!-- اسکریپت تبلیغات Adly (با defer، چون خودش هم فقط بعد از رویداد load اجرا می‌شود) -->
@@ -332,9 +332,6 @@
             }
         });
     </script>
-    <script src="config/mandatory-channels/avaye-khiyal.js"></script>
-    <script src="config/mandatory-channels/tak-noor.js"></script>
-    <script src="config/mandatory-channels/rasamim.js"></script>
     <script src="config/mandatory-channels/partner.js"></script>
     <script src="config/mandatory-channels/index.js"></script>
     <script src="channel-photos.js"></script>
