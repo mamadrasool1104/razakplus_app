@@ -713,59 +713,31 @@ function renderHome() {
         const total = cat.levels.length;
         const perc = total > 0 ? (completed / total) * 100 : 0;
         const div = document.createElement('div');
-        div.className = `category-card ${completed === total && total > 0 ? 'completed' : ''}`;
+        // دسته‌بندی‌ای که هنوز هیچ مرحله‌ای ندارد (total === 0) به‌طور خودکار
+        // به‌شکل «قفل/به‌زودی» نمایش داده می‌شود و قابل‌کلیک نیست — این قانون
+        // عمومی است، یعنی هر دسته‌بندی جدیدی که levels آن هنوز خالی است
+        // (مثل «اصطلاحات» یا «ایده‌های شما» تا وقتی که مرحله‌ای برایش اضافه
+        // نشده) خودکار همین رفتار را می‌گیرد، بدون نیاز به هیچ کد اضافه‌ای؛
+        // به‌محض این‌که در data.json حداقل یک مرحله به levels آن اضافه شود،
+        // خودش قابل‌بازی می‌شود.
+        const isLocked = total === 0;
+        div.className = `category-card ${isLocked ? 'locked' : (completed === total ? 'completed' : '')}`;
         div.innerHTML = `
             <div class="cat-icon">${cat.icon}</div>
             <div class="cat-info">
                 <h3 class="cat-title">${cat.name}</h3>
-                <div class="cat-stats">${completed} از ${total} مرحله</div>
-                <div class="progress-track"><div class="progress-fill" style="width: ${perc}%"></div></div>
+                <div class="cat-stats">${isLocked ? 'به‌زودی...' : `${completed} از ${total} مرحله`}</div>
+                ${isLocked ? '' : `<div class="progress-track"><div class="progress-fill" style="width: ${perc}%"></div></div>`}
             </div>`;
-        div.addEventListener('click', () => { AudioEngine.tap(); requireChannelJoin(() => startCategory(cat)); });
+        if (!isLocked) {
+            div.addEventListener('click', () => { AudioEngine.tap(); requireChannelJoin(() => startCategory(cat)); });
+        }
         catContainer.appendChild(div);
     });
-
-    // کارت «ایده‌های شما»: برخلاف کارت‌های بالا وارد بازی نمی‌شود، بلکه
-    // ایده‌هایی که کاربران دیگر فرستاده‌اند (و خودت دستی در data.json،
-    // بخش suggestions.submittedIdeas، تأیید/اضافه کرده‌ای) را نشان می‌دهد.
-    const ideasDiv = document.createElement('div');
-    ideasDiv.className = 'category-card ideas-card';
-    ideasDiv.innerHTML = `
-        <div class="cat-icon">👥</div>
-        <div class="cat-info">
-            <h3 class="cat-title">ایده‌های شما</h3>
-            <div class="cat-stats">ایده‌هایی که بازیکن‌های دیگه فرستادن</div>
-        </div>`;
-    ideasDiv.addEventListener('click', () => { AudioEngine.tap(); openCommunityIdeasModal(); });
-    catContainer.appendChild(ideasDiv);
 
     renderDailyChallengeCard();
     renderChannelPromos();
     renderSuggestionsSection();
-}
-
-// لیست ایده‌هایی که خودت دستی در data.json (بخش suggestions.submittedIdeas)
-// تأیید و اضافه کرده‌ای را نشان می‌دهد. اگر آرایه خالی بود، یک پیام دوستانه
-// نشان داده می‌شود به‌جای یک پنجره خالی.
-function openCommunityIdeasModal() {
-    const list = (DB.suggestions && Array.isArray(DB.suggestions.submittedIdeas)) ? DB.suggestions.submittedIdeas : [];
-    const body = document.getElementById('community-ideas-body');
-    if (!body) return;
-
-    if (list.length === 0) {
-        body.innerHTML = `<p class="community-ideas-empty">هنوز ایده‌ای ثبت نشده — اولین نفری باش که پیشنهاد می‌ده! 🫶</p>`;
-    } else {
-        body.innerHTML = list.map(item => `
-            <div class="community-idea-item">
-                <div class="community-idea-head">
-                    <span class="community-idea-name">${item.name || 'ناشناس'}</span>
-                    ${item.emojis ? `<span class="community-idea-emojis">${item.emojis}</span>` : ''}
-                </div>
-                <p class="community-idea-text">${item.idea || ''}</p>
-            </div>`).join('');
-    }
-
-    document.getElementById('modal-community-ideas').classList.remove('hidden');
 }
 
 // بخش «پیشنهادات شما 🫂» — جایگزین کارت قبلی «به‌زودی...» است. تمام متن‌ها
@@ -1046,15 +1018,16 @@ function requireChannelJoin(action) {
     document.getElementById('modal-join-gate').classList.remove('hidden');
 }
 
-// محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. متن بالای پنجره
-// و ردیف کانال هر دو از info.channel (که از فایل خودِ آن کانال می‌آید،
-// مثل avaye-khiyal.js) خوانده می‌شوند — هیچ‌جا نوع 'partner' به کاربر
-// نشان داده نمی‌شود.
+// محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. متن معرفیِ هر
+// کانال دیگر از JS نمی‌آید — مستقیماً در index.html نوشته شده (چهار
+// <p class="join-gate-msg" data-channel-id="..."> داخل modal-join-gate)؛
+// این تابع فقط همان‌یکی که با کانال فعال این هفته می‌خواند را نشان
+// می‌دهد و بقیه را مخفی می‌کند. فقط ردیف پایین (نام/آیکون/دکمه‌ی عضویت)
+// همچنان پویاست، چون لینک آن هر هفته عوض می‌شود.
 function renderJoinGateModal(info) {
-    const messageEl = document.getElementById('join-gate-message');
-    if (messageEl) {
-        messageEl.textContent = info.channel.joinMessage || 'برای استفاده از رازک، عضویت در کانال زیر لازمه 👇';
-    }
+    document.querySelectorAll('.join-gate-msg').forEach(el => {
+        el.classList.toggle('hidden', el.dataset.channelId !== info.channel.id);
+    });
 
     const container = document.getElementById('join-gate-channels');
     if (!container) return;
