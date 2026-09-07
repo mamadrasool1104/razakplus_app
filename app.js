@@ -9,6 +9,20 @@
 const KVDB_BUCKET_ID = "YOUR_BUCKET_ID_HERE"; 
 // ==========================================
 
+// --- تشخیص مقاوم شناسه‌ی کاربر ایتا ---
+// دلیل وجود این تابع: قبلاً کد مستقیماً از initDataUnsafe.user.id استفاده
+// می‌کرد. اگر SDK ایتا در نسخه/پلتفرم خاصی این فیلد را با نام دیگری برگرداند
+// یا موقتاً خالی باشد، id می‌شد undefined، کلید ذخیره‌سازی عوض می‌شد، و کاربر
+// «امتیازش صفر شده» می‌دید (چون دیگر به رکورد قبلی‌اش وصل نمی‌شد). این تابع
+// چند نام محتمل را امتحان می‌کند و همیشه یک رشته یا null برمی‌گرداند، هرگز
+// undefined/NaN که به رشته‌ی کلید نشت کند.
+function resolveEitaaUserId(rawUser) {
+    if (!rawUser || typeof rawUser !== 'object') return null;
+    const candidate = rawUser.id ?? rawUser.user_id ?? rawUser.userId ?? rawUser.chat_id ?? null;
+    if (candidate === null || candidate === undefined || candidate === '') return null;
+    return String(candidate);
+}
+
 const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
 const HINT_COST = 15;
 // این دو تا هنوز برای کارت‌های «کانال‌های ما» در پایین صفحه استفاده می‌شوند.
@@ -122,7 +136,7 @@ window.debugRotation = function (customDate) {
 const BASE_SCORE = 10;
 const DAILY_BASE_SCORE = 50;
 // فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما»
-const PROMO_ROTATE_INTERVAL_MS = 4000;
+const PROMO_ROTATE_INTERVAL_MS = 5000;
 
 // امتیاز پایه‌ی هر دسته؛ اگر دسته‌ای اینجا نبود از BASE_SCORE استفاده می‌شود.
 // (درخواست: امتیاز ضرب‌المثل‌ها حداقل ۲۵ باشد)
@@ -232,24 +246,24 @@ const MEDALS_DB = [
     { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن',
         check: (state) => getTotalCompleted(state) >= 1,
         progress: (state) => `${Math.min(getTotalCompleted(state), 1)}/1` },
-    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '50 ضرب‌المثل را حل کن',
-        check: (state) => (state.progress['proverbs']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['proverbs']?.length || 0, 50)}/5` },
-    { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '50 فیلم و سریال را حل کن',
-        check: (state) => (state.progress['movies']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['movies']?.length || 0, 50)}/5` },
-    { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '50 کشور را حل کن',
-        check: (state) => (state.progress['countries']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['countries']?.length || 0, 50)}/5` },
+    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵۰ ضرب‌المثل را حل کن',
+        check: (state) => (state.progress['proverbs']?.length || 0) >= 50,
+        progress: (state) => `${Math.min(state.progress['proverbs']?.length || 0, 50)}/50` },
+    { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '۵۰ فیلم و سریال را حل کن',
+        check: (state) => (state.progress['movies']?.length || 0) >= 50,
+        progress: (state) => `${Math.min(state.progress['movies']?.length || 0, 50)}/50` },
+    { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '۵۰ کشور را حل کن',
+        check: (state) => (state.progress['countries']?.length || 0) >= 50,
+        progress: (state) => `${Math.min(state.progress['countries']?.length || 0, 50)}/50` },
     // نکته: عمداً از totalEarned استفاده می‌کنیم نه globalScore، چون globalScore با
-    // خرج کردن روی راهنما کم می‌شود و ممکن بود کاربری که واقعاً ۵۰۰ امتیاز کسب
+    // خرج کردن روی راهنما کم می‌شود و ممکن بود کاربری که واقعاً ۵۰۰۰ امتیاز کسب
     // کرده ولی خرج کرده، هیچ‌وقت این مدال را نگیرد.
-    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '5000 امتیاز کسب کن',
+    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰۰ امتیاز کسب کن',
         check: (state) => state.totalEarned >= 5000,
         progress: (state) => `${Math.min(state.totalEarned, 5000)}/5000` },
-    { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '50 چالش روزانه را حل کن',
-        check: (state) => (state.dailyChallenge?.completedCount || 0) >= 5,
-        progress: (state) => `${Math.min(state.dailyChallenge?.completedCount || 0, 5)}/5` },
+    { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '۱۰ چالش روزانه را حل کن',
+        check: (state) => (state.dailyChallenge?.completedCount || 0) >= 10,
+        progress: (state) => `${Math.min(state.dailyChallenge?.completedCount || 0, 10)}/10` },
     { id: 'all_categories', name: 'استاد بازی', icon: '👑', desc: 'همه دسته‌ها را صد‌درصد کامل کن',
         check: (state) => DB.categories.length > 0 && DB.categories.every(c => (state.progress[c.id]?.length || 0) >= c.levels.length),
         progress: (state) => {
@@ -284,12 +298,13 @@ const CHANNEL_PROMOS = [
     },
     {
         type: 'ad',
-        name: 'تبلیغات عمو',
+        name: 'محمد آزاد',
+        handle: '@Im_Azad',
         badge: 'Ads',
         iconType: 'ad',
-        photoKey: '@tab_amoo',
-        desc: 'برای رزرو کلیک کنید و به مدیر پیام بدهید!',
-        link: 'https://eitaa.com/tab_amoo',
+        photoKey: 'im_azad',
+        desc: 'سازنده ایتا+',
+        link: 'https://eitaa.com/Im_Azad',
         buttonText: 'مشاهده'
         // برای ثبت تبلیغ جدید، فقط همین چند خط را عوض کن (و در صورت وجود
         // عکس تبلیغ‌کننده، کلید photoKey را در channel-photos.js هم پر کن).
@@ -413,8 +428,19 @@ function sanitizeDisplayName(raw) {
    1. Cloud Storage Sync (KVDB)
 ========================================= */
 const StorageManager = {
+    // ⚠️ قفل ایمنی: تا وقتی load() یک‌بار با موفقیت (یا با اطمینان از «کاربر
+    // واقعاً جدید است») تمام نشده، save() هیچ‌کاری نمی‌کند. بدون این قفل،
+    // اگر بارگذاری امتیاز به هر دلیلی (قطعی شبکه، خطای KVDB، schema نامعتبر)
+    // شکست بخورد، GameState با مقادیر پیش‌فرض (globalScore: 0) باقی می‌ماند
+    // و اولین save() همان صفر را روی رکورد واقعی کاربر در KVDB می‌نویسد —
+    // دقیقاً همان الگوی «امتیاز صفر شد» که هرگز نباید اتفاق بیفتد.
+    ready: false,
     getKey: () => `eitaa_game_${GameState.user.id}`,
     save: async function() {
+        if (!this.ready) {
+            console.warn('StorageManager.save() قبل از پایان load() فراخوانی شد؛ برای جلوگیری از رونویسی دیتای واقعی نادیده گرفته شد.');
+            return;
+        }
         const payload = JSON.stringify({
             globalScore: GameState.globalScore,
             totalEarned: GameState.totalEarned,
@@ -431,13 +457,23 @@ const StorageManager = {
     },
     load: async function(callback) {
         let finalData = null;
+        let cloudWasAttempted = false;
+        let cloudFailedUnexpectedly = false; // true فقط برای خطای واقعی، نه برای «۴۰۴ یعنی کاربر جدید»
         if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
+            cloudWasAttempted = true;
             try {
                 const response = await fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}`);
-                if (response.ok) finalData = await response.text();
-            } catch (e) {}
+                if (response.ok) {
+                    finalData = await response.text();
+                } else if (response.status !== 404) {
+                    cloudFailedUnexpectedly = true;
+                }
+            } catch (e) {
+                cloudFailedUnexpectedly = true;
+            }
         }
         if (!finalData) finalData = localStorage.getItem(this.getKey());
+
         if (finalData) {
             try {
                 const data = JSON.parse(finalData);
@@ -451,7 +487,26 @@ const StorageManager = {
                 GameState.settings = { ...GameState.settings, ...(data.settings || {}) };
                 GameState.dailyChallenge = data.dailyChallenge || { lastCompletedDate: null, completedCount: 0 };
                 GameState.joinGate = data.joinGate || { confirmedChannelId: null, confirmedWeekNumber: null };
-            } catch(e) {}
+                this.ready = true;
+            } catch (e) {
+                // دیتا وجود داشت ولی خراب/ناسازگار بود؛ به‌جای رفتن به مقادیر
+                // پیش‌فرض و ذخیره‌ی صفر روی آن، save() را قفل نگه می‌داریم تا
+                // کاربر حداقل در همین نشست دیتای خرابش رونویسی نشود.
+                console.error('داده‌ی ذخیره‌شده معتبر نبود، از رونویسی آن جلوگیری شد:', e);
+                this.ready = false;
+            }
+        } else if (cloudWasAttempted && cloudFailedUnexpectedly) {
+            // کلاود بود ولی گرفتنش شکست خورد (نه ۴۰۴) و لوکال هم چیزی نداشت.
+            // این می‌تواند یعنی همین الان اتصال قطع است، نه اینکه کاربر واقعاً
+            // جدید است. save() را قفل می‌کنیم تا صفر روی رکورد واقعی ننشیند.
+            this.ready = false;
+            if (typeof showToast === 'function') {
+                showToast('⚠️', 'مشکل در اتصال به سرور؛ پیشرفت شما بارگذاری نشد');
+            }
+        } else {
+            // نه دیتای کلاود بود نه لوکال، و کلاود هم واقعاً ۴۰۴/غیرفعال بود
+            // (نه خطای شبکه) → این واقعاً یک کاربر جدید است، صفر بودن درست است.
+            this.ready = true;
         }
         callback();
     }
@@ -671,6 +726,23 @@ function applyAvatarVisual(avatarEl, gender) {
     if (gender === 'boy') avatarEl.classList.add('gender-boy');
     if (gender === 'girl') avatarEl.classList.add('gender-girl');
 
+    const avatarId = GameState.settings.avatarId;
+    if (avatarId) {
+        avatarEl.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = `Profile/${avatarId}.jpg`;
+        img.alt = 'Profile';
+        img.addEventListener('error', () => {
+            // اگه فایل عکس پیدا نشد (مثلاً پاک/جابه‌جا شده)، به‌جای آیکون شکسته
+            // برمی‌گردیم به همون آیکون هندسی جنسیت
+            avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
+            avatarEl.style.background = '';
+        });
+        avatarEl.appendChild(img);
+        avatarEl.style.background = 'transparent';
+        return;
+    }
+
     if (GameState.user.photo_url) {
         avatarEl.innerHTML = '';
         const img = document.createElement('img');
@@ -686,6 +758,87 @@ function applyAvatarVisual(avatarEl, gender) {
         avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
         avatarEl.style.background = '';
     }
+}
+
+// مجموعه‌ی عکس‌های آماده‌ی پروفایل (داخل پوشه‌ی Profile/). نام واقعی
+// فایل‌ها روی دیسک این الگو را دارد: profile_Boy1.jpg, profile_Girl3.jpg,
+// ... (حرف اول جنسیت بزرگ، بدون خط تیره). برای افزودن عکس بیشتر، فایل را
+// با همین الگو در پوشه‌ی Profile/ بگذار و شماره‌اش را به یکی از دو
+// آرایه‌ی زیر اضافه کن.
+const AVATAR_PHOTO_IDS = {
+    Boy: [1, 2, 3, 4, 5, 6, 7, 10, 11, 12],
+    Girl: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+};
+
+// عکس‌های پسرها و دخترها را در دو بخش جدا (با عنوان مجزا) نشان می‌دهد، نه
+// مخلوط در یک گرید — انتخاب راحت‌تر می‌شود و مشخصه هر عکس مال کدام گروهه.
+function renderAvatarPicker() {
+    const container = document.getElementById('avatar-picker-grid');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const currentAvatarId = GameState.settings.avatarId;
+
+    // گزینه‌ی «بدون عکس» — خارج از دو بخش جنسیتی، چون خنثی است
+    const noneWrap = document.createElement('div');
+    noneWrap.className = 'avatar-picker-none-wrap';
+    const noneOption = document.createElement('button');
+    noneOption.type = 'button';
+    noneOption.className = `avatar-option avatar-option-none ${!currentAvatarId ? 'selected' : ''}`;
+    noneOption.innerHTML = AVATAR_ICONS[GameState.settings.gender] || AVATAR_ICONS.neutral;
+    noneOption.addEventListener('click', () => selectAvatarPhoto(null));
+    noneWrap.appendChild(noneOption);
+    container.appendChild(noneWrap);
+
+    const sections = [
+        { key: 'Boy', label: 'پسرها' },
+        { key: 'Girl', label: 'دخترها' }
+    ];
+
+    sections.forEach(({ key: genderKey, label }) => {
+        const lowerGender = genderKey.toLowerCase(); // 'boy'/'girl' — همونی که GameState.settings.gender واقعاً استفاده می‌کنه
+
+        const sectionTitle = document.createElement('div');
+        sectionTitle.className = 'avatar-picker-section-title';
+        sectionTitle.textContent = label;
+        container.appendChild(sectionTitle);
+
+        const sectionGrid = document.createElement('div');
+        sectionGrid.className = 'avatar-picker-grid-inner';
+
+        AVATAR_PHOTO_IDS[genderKey].forEach(num => {
+            const id = `profile_${genderKey}${num}`;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `avatar-option ${currentAvatarId === id ? 'selected' : ''}`;
+            const img = document.createElement('img');
+            img.src = `Profile/${id}.jpg`;
+            img.alt = lowerGender;
+            img.loading = 'lazy';
+            img.width = 64;
+            img.height = 64;
+            // اگه یک فایل خاص گم بود، به‌جای آیکون شکسته، کل گزینه مخفی می‌شود
+            img.addEventListener('error', () => { btn.style.display = 'none'; });
+            btn.appendChild(img);
+            btn.addEventListener('click', () => selectAvatarPhoto(id, lowerGender));
+            sectionGrid.appendChild(btn);
+        });
+
+        container.appendChild(sectionGrid);
+    });
+}
+
+function selectAvatarPhoto(avatarId, matchingGender) {
+    AudioEngine.tap();
+    GameState.settings.avatarId = avatarId;
+    // انتخاب یک عکس، جنسیت متناظرش رو هم خودکار ست می‌کنه (با حروف کوچک،
+    // چون بقیه‌ی کد از جمله AVATAR_ICONS و data-gender با حروف کوچک کار
+    // می‌کنند) تا لازم نباشه کاربر جدا هم جنسیت رو انتخاب کنه هم عکس رو
+    if (matchingGender) GameState.settings.gender = matchingGender;
+    StorageManager.save();
+    renderProfile();
+    renderHome();
+    document.getElementById('modal-avatar-picker').classList.add('hidden');
 }
 
 function renderHome() {
@@ -792,6 +945,11 @@ async function copySuggestionTemplate(text) {
 }
 
 let promoRotateInterval = null;
+let promoResumeTimeout = null;
+// این دو رفرنس فقط برای این نگه داشته می‌شوند که بشود لیسنرهای رندر قبلی را
+// قبل از اضافه‌کردن لیسنر تازه از روی container برداشت (پایین‌تر توضیح کامل).
+let promoScrollHandler = null;
+let promoPointerDownHandler = null;
 
 // صفحه پروفایل: آواتار و نام کاربر را از GameState می‌خواند و کارت جنسیت
 // انتخاب‌شده را هایلایت می‌کند.
@@ -815,7 +973,22 @@ function renderChannelPromos() {
     const dotsContainer = document.getElementById('channel-promo-dots');
     if (!container || !dotsContainer) return;
 
+    // ⚠️ باگ واقعی که اینجا بود: container (بر خلاف کارت‌های داخلش) هر بار
+    // از نو ساخته نمی‌شود، فقط innerHTML آن پاک می‌شود. یعنی این تابع با هر
+    // بار برگشت کاربر به صفحه اصلی (goBackToHome → renderHome) دوباره
+    // addEventListener('scroll')/('pointerdown') را روی همان container قبلی
+    // صدا می‌زد بدون حذف لیسنر قبلی. نتیجه بعد از چند بار رفت‌وبرگشت: تعداد
+    // لیسنرها روی هم انباشته می‌شد (نشتی حافظه) و چند setInterval چرخش خودکار
+    // هم‌زمان اجرا می‌شدند (مصرف بی‌مورد CPU/باتری روی گوشی‌های ضعیف و پرش
+    // نامنظم کارت‌ها). با پاک کردن صریح لیسنرها/تایمرهای قبلی قبل از ساخت
+    // نسخه‌ی تازه، این مشکل کاملاً برطرف می‌شود.
     clearInterval(promoRotateInterval);
+    clearTimeout(promoResumeTimeout);
+    if (promoScrollHandler) container.removeEventListener('scroll', promoScrollHandler);
+    if (promoPointerDownHandler) container.removeEventListener('pointerdown', promoPointerDownHandler);
+    promoScrollHandler = null;
+    promoPointerDownHandler = null;
+
     container.innerHTML = '';
     dotsContainer.innerHTML = '';
 
@@ -838,7 +1011,9 @@ function renderChannelPromos() {
                 <span class="ad-ribbon">${promo.badge || 'Ads'}</span>
                 <div class="channel-promo-icon"></div>
                 <div class="channel-promo-info">
-                    <p class="channel-promo-desc ad-desc">${promo.desc}</p>
+                    <h3 class="channel-promo-title">${promo.name}</h3>
+                    <span class="channel-promo-handle">${promo.handle || ''}</span>
+                    <p class="channel-promo-desc">${promo.desc}</p>
                 </div>
                 <div class="ad-cta-btn">${promo.buttonText || 'مشاهده'}</div>`;
         } else {
@@ -875,13 +1050,14 @@ function renderChannelPromos() {
     dotsContainer.classList.toggle('hidden', visiblePromos.length <= 1);
 
     if (visiblePromos.length > 1) {
-        container.addEventListener('scroll', () => {
+        promoScrollHandler = () => {
             const cardWidth = container.firstElementChild ? container.firstElementChild.offsetWidth + 12 : 1;
             const activeIndex = Math.round(Math.abs(container.scrollLeft) / cardWidth);
             dotsContainer.querySelectorAll('.channel-promo-dot').forEach((dot, i) => {
                 dot.classList.toggle('active', i === activeIndex);
             });
-        });
+        };
+        container.addEventListener('scroll', promoScrollHandler);
 
         // چرخش خودکار هر ۴ ثانیه. از scrollIntoView به‌جای دستکاری مستقیم
         // scrollLeft استفاده می‌کنیم چون علامت (مثبت/منفی) scrollLeft در حالت
@@ -895,14 +1071,14 @@ function renderChannelPromos() {
         promoRotateInterval = setInterval(rotateToNext, PROMO_ROTATE_INTERVAL_MS);
 
         // با تعامل دستی کاربر، چرخش خودکار موقتاً متوقف و بعد از چند ثانیه از سر گرفته می‌شود
-        let resumeTimeout = null;
-        container.addEventListener('pointerdown', () => {
+        promoPointerDownHandler = () => {
             clearInterval(promoRotateInterval);
-            clearTimeout(resumeTimeout);
-            resumeTimeout = setTimeout(() => {
+            clearTimeout(promoResumeTimeout);
+            promoResumeTimeout = setTimeout(() => {
                 promoRotateInterval = setInterval(rotateToNext, PROMO_ROTATE_INTERVAL_MS);
             }, 6000);
-        });
+        };
+        container.addEventListener('pointerdown', promoPointerDownHandler);
     }
 }
 
@@ -1019,13 +1195,13 @@ function requireChannelJoin(action) {
 }
 
 // محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. متن معرفیِ هر
-// کانال دیگر از JS نمی‌آید — مستقیماً در index.html نوشته شده (چهار
-// <p class="join-gate-msg" data-channel-id="..."> داخل modal-join-gate)؛
+// کانال دیگر از JS نمی‌آید — مستقیماً در index.html نوشته شده (سه
+// <div class="join-gate-channel-block" data-channel-id="..."> داخل modal-join-gate)؛
 // این تابع فقط همان‌یکی که با کانال فعال این هفته می‌خواند را نشان
 // می‌دهد و بقیه را مخفی می‌کند. فقط ردیف پایین (نام/آیکون/دکمه‌ی عضویت)
 // همچنان پویاست، چون لینک آن هر هفته عوض می‌شود.
 function renderJoinGateModal(info) {
-    document.querySelectorAll('.join-gate-msg').forEach(el => {
+    document.querySelectorAll('.join-gate-channel-block').forEach(el => {
         el.classList.toggle('hidden', el.dataset.channelId !== info.channel.id);
     });
 
@@ -1116,10 +1292,10 @@ function startCategory(category) {
     }
     GameState.activeLevelIndex = nextIndex;
     
-    // نمایش هشدار برای ضرب‌المثل‌ها
+    // نمایش هشدار برای بخش‌هایی که ماهیت محاوره‌ای/عامیانه دارند
     const noticeEl = document.getElementById('category-notice');
-    if (category.id === 'proverbs') {
-        noticeEl.innerHTML = '💡 <strong>توجه:</strong> برخی از ضرب‌المثل‌ها به زبان محاوره و عامیانه نوشته شده‌اند.';
+    if (category.id === 'proverbs' || category.id === 'idioms') {
+        noticeEl.innerHTML = '💡 <strong>توجه:</strong> برخی از ' + (category.id === 'idioms' ? 'اصطلاحات' : 'ضرب‌المثل‌ها') + ' به زبان محاوره و عامیانه نوشته شده‌اند.';
         noticeEl.classList.remove('hidden');
     } else {
         noticeEl.classList.add('hidden');
@@ -1181,6 +1357,10 @@ function renderLevel() {
             const group = document.createElement('div');
             group.className = 'word-group';
             for (let char of word) {
+                // نیم‌فاصله (ZWNJ) یک کاراکتر نامرئی است که فقط برای چسباندن
+                // بصری دو تکه‌ی یک کلمه‌ی مرکب استفاده می‌شود (مثل «پاچه‌خواری»)؛
+                // نباید خودش یک خانه/کلید قابل‌حدس‌زدن باشد.
+                if (char === '\u200c') continue;
                 const slotObj = { id: slotId++, char: char, filledWith: '', keyId: null, locked: false, isWord: false };
                 GameState.slots.push(slotObj);
                 requiredUnits.push(char);
@@ -1443,16 +1623,17 @@ function setupEvents() {
             GameState.settings.gender = el.dataset.gender;
             StorageManager.save();
             renderProfile();
+            renderHome();
         });
     });
 
-    // دکمه‌ی «انتخاب عکس پروفایل» فعلاً فقط جای‌گیر است (طبق درخواست، مجموعه‌ی
-    // عکس‌ها بعداً اضافه می‌شود)؛ همین الان فقط یک پیام می‌دهد.
+    // دکمه‌ی «انتخاب عکس پروفایل»: مجموعه‌ی عکس‌های آماده رو داخل یک پنجره نشون می‌ده
     const avatarPhotoBtn = document.getElementById('btn-choose-avatar-photo');
     if (avatarPhotoBtn) {
         avatarPhotoBtn.addEventListener('click', () => {
             AudioEngine.tap();
-            showToast('🖼️', 'انتخاب عکس پروفایل به‌زودی اضافه می‌شه!');
+            renderAvatarPicker();
+            document.getElementById('modal-avatar-picker').classList.remove('hidden');
         });
     }
 
@@ -1527,9 +1708,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (window.Eitaa && window.Eitaa.WebApp) {
         window.Eitaa.WebApp.ready();
         window.Eitaa.WebApp.expand();
-        if (window.Eitaa.WebApp.initDataUnsafe?.user) {
-            GameState.user = window.Eitaa.WebApp.initDataUnsafe.user;
+        const eitaaUser = window.Eitaa.WebApp.initDataUnsafe?.user;
+        const resolvedId = resolveEitaaUserId(eitaaUser);
+        if (eitaaUser && resolvedId) {
+            // عمداً merge می‌کنیم نه جایگزینی کامل GameState.user: اگر SDK در
+            // یک نسخه فیلدی (مثلاً photo_url) را برنگرداند، مقدار پیش‌فرض حذف
+            // نمی‌شود. مهم‌تر از همه: id همیشه از resolveEitaaUserId می‌آید که
+            // تضمین می‌کند هرگز undefined/NaN به کلید ذخیره‌سازی نشت نمی‌کند.
+            GameState.user = { ...GameState.user, ...eitaaUser, id: resolvedId };
         }
+        // اگر eitaaUser وجود داشت ولی id قابل تشخیص نبود، عمداً GameState.user
+        // را دست‌نخورده (guest) نگه می‌داریم — بهتر است کاربر به‌عنوان مهمان
+        // دیده شود تا اینکه با کلید نادرست (eitaa_game_undefined) به رکورد
+        // اشتباهی وصل شود یا رکورد واقعی‌اش گم به‌نظر برسد.
     }
 
     try {
