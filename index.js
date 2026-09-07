@@ -1,22 +1,24 @@
 // =====================================================
 // RAZAK WEEKLY MANDATORY CHANNELS — ROTATION INDEX
-// EDIT ROTATION ORDER / START DATE HERE
+// EDIT ROTATION ORDER / START DATE / CHANNEL DATA HERE
 // =====================================================
-// اطلاعات هر کانال در فایل جداگانه‌ی خودش، کنار همین فایل، تعریف شده
-// (avaye-khiyal.js / tak-noor.js / rasamim.js / partner.js). این فایل هیچ
-// اطلاعاتی از کانال‌ها را تکرار نمی‌کند — فقط به همان آبجکت‌ها اشاره
-// می‌کند و «ترتیب چرخش» و «تاریخ شروع» را مشخص می‌کند.
+// این فایل «ترتیب چرخش» و «تاریخ شروع» را مشخص می‌کند، و اطلاعات ساختاری
+// هر سه کانال (آوای‌خیال، تک‌نور، رسامیم) را مستقیماً همینجا نگه می‌دارد.
 //
-// نکته‌ی مهم دربارهٔ ترتیب لود‌شدن اسکریپت‌ها: در index.html این فایل باید
-// بعد از هر ۴ فایل کانال (avaye-khiyal.js, tak-noor.js, rasamim.js,
-// partner.js) لود شود، وگرنه window.MANDATORY_CHANNEL_* هنوز تعریف نشده و
-// undefined می‌آید.
+// فیلدهایی که برای هر کانال می‌توانی عوض کنی: name, username, icon, enabled.
+// id را عوض نکن (پیشرفت ذخیره‌شده‌ی کاربر با همین id شناخته می‌شود).
+//
+// ⚠️ توضیحات کامل/متن معرفی هر کانال (همان چیزی که روی صفحه‌ی «قبل از
+// شروع...» نشان داده می‌شود) اینجا نیست — مستقیماً داخل index.html نوشته
+// شده (سه بلوک join-gate-channel-block با data-channel-id، داخل
+// modal-join-gate) تا بدون باز کردن هیچ فایل JS ای قابل ویرایش باشد.
 //
 // --- برای اضافه/حذف/جابه‌جا کردن یک کانال در چرخش ---
-//   افزودن:   یک فایل جدید مثل بقیه بساز، در index.html اسکریپتش را قبل از
-//             همین فایل اضافه کن، و آبجکتش را به آرایه‌ی order زیر اضافه کن.
-//   حذف:      خط مربوطه را از آرایه‌ی order زیر پاک کن (یا ساده‌تر: در فایل
-//             خودِ کانال enabled:false بگذار).
+//   افزودن یک کانال کاملاً جدید: یک آبجکت دیگر شبیه پایین به آرایه‌ی order
+//            اضافه کن، و یک <div class="join-gate-channel-block hidden"
+//            data-channel-id="..."> متناظرش را هم در index.html (داخل
+//            modal-join-gate) بنویس.
+//   حذف:      خط مربوطه را از آرایه‌ی order زیر پاک کن (یا ساده‌تر: enabled:false).
 //   جابه‌جایی ترتیب: فقط ترتیب همین آرایه را عوض کن.
 // هیچ‌کدام از این تغییرات نیازی به دست‌زدن به app.js یا الگوریتم چرخش ندارد.
 window.MANDATORY_CHANNELS_ROTATION = {
@@ -25,9 +27,8 @@ window.MANDATORY_CHANNELS_ROTATION = {
     startDate: '2025-01-06T00:00:00+03:30',
     weeksPerChannel: 1, // هر کانال چند هفته پشت‌سرهم فعال بماند
     order: [
-        window.MANDATORY_CHANNEL_avay_khiyal,
-        window.MANDATORY_CHANNEL_tech_nour,
-        window.MANDATORY_CHANNEL_rasa_meme,
-        window.MANDATORY_CHANNEL_partner
+        { id: 'avay_khiyal', type: 'channel', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
+        { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
+        { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true }
     ]
 };
